@@ -12,6 +12,9 @@
 
     let scene, camera, renderer;
     let earth, clouds;
+    let raycaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector2();
+    let earthRotationSpeed = 0.01;
 
     init();
     animate();
@@ -62,32 +65,35 @@
         depthWrite: false,
       });
 
-      // Mesh Nubes (ligeramente más grande)
+      // Mesh Nubes
       const cloudGeometry = new THREE.SphereGeometry(2.03, 64, 64);
       clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
-      clouds.name = 'clouds';
       scene.add(clouds);
 
-      // Ajustar al redimensionar
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
+      // Event listener para clics
+      window.addEventListener('mousedown', onMouseDown, false);
+    }
+
+    function onMouseDown(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children);
+
+      for (let i = 0; i < intersects.length; i++) {
+        if (intersects[i].object.name === 'earth') {
+          earthRotationSpeed += 0.01;
+          console.log('¡Haz hecho clic en la Tierra!');
+        }
+      }
     }
 
     function animate() {
       requestAnimationFrame(animate);
-      render();
-    }
 
-    function render() {
-      // Rotación
-      const earthMesh = scene.getObjectByName('earth');
-      const cloudMesh = scene.getObjectByName('clouds');
-
-      earthMesh.rotation.y += 0.001;
-      cloudMesh.rotation.y += 0.0015; // Nubes un poco más rápido
+      earth.rotation.y += earthRotationSpeed;
+      clouds.rotation.y += earthRotationSpeed * 1.2;
 
       renderer.render(scene, camera);
     }
